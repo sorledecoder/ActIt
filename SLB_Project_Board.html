@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SLB Project Board</title>
+<meta name="theme-color" content="#052a63">
+<style>
+:root{--bg:#f4f6fb;--panel:#fff;--p2:#f0f3fa;--line:rgba(15,33,72,.12);--ink:#101a33;--dim:#5b6a8c;--brand:#0a5fc7;--deep:#052a63;
+--todo:#5b6a8c;--prog:#c98a10;--done:#1fa34d;--notdone:#e0453f}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;display:flex;flex-direction:column}
+button,input,select,textarea{font-family:inherit;font-size:14px}
+header{background:linear-gradient(135deg,var(--deep),var(--brand));color:#fff;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+h1{font-size:17px;margin:0;flex:1}h1 small{display:block;font-size:11px;font-weight:400;opacity:.8}
+.hb{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:9px;padding:8px 11px;cursor:pointer}
+.stats{display:flex;gap:8px;margin-top:10px}
+.st{flex:1;background:rgba(255,255,255,.14);border-radius:11px;padding:7px;text-align:center}
+.st b{display:block;font-size:18px}.st span{font-size:10px;text-transform:uppercase;opacity:.85}
+.bar{height:5px;background:rgba(255,255,255,.25);border-radius:4px;margin-top:9px;overflow:hidden}.bar i{display:block;height:100%;background:#5be28a}
+.tools{display:flex;gap:8px;padding:10px 12px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tools input,.tools select{border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:var(--p2);color:var(--ink);flex:1;min-width:120px}
+#board{flex:1;display:flex;gap:12px;padding:12px;overflow-x:auto;scroll-snap-type:x mandatory;align-items:flex-start}
+.col{flex:0 0 85vw;max-width:340px;scroll-snap-align:start;background:#e9edf6;border-radius:14px;padding:10px;max-height:100%;display:flex;flex-direction:column;border-top:4px solid var(--c)}
+.col.over{outline:2px dashed var(--brand);background:#dde8fb}
+.ch{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700;font-size:14px}
+.ch .n{background:var(--c);color:#fff;border-radius:20px;font-size:11px;padding:2px 8px}
+.ch button{margin-left:auto;border:none;background:var(--panel);width:28px;height:28px;border-radius:8px;font-size:18px;cursor:pointer;color:var(--brand)}
+.cards{overflow-y:auto;min-height:60px;flex:1}
+.card{background:var(--panel);border-radius:11px;padding:11px;margin-bottom:9px;border:1px solid var(--line);box-shadow:0 2px 6px rgba(20,40,90,.07);cursor:pointer;border-left:4px solid var(--pc)}
+.card.od{background:#fdeceb;border-color:#f3b7b3}
+.card h4{margin:0 0 6px;font-size:14px;line-height:1.3}
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}
+.tag{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--p2);color:var(--dim)}
+.tag.red{background:var(--notdone);color:#fff}.tag.hi{background:#fde3e1;color:#b3261e}.tag.md{background:#fff1d6;color:#8a5a00}.tag.lo{background:#e3f4ea;color:#157a38}
+.meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim)}
+.av{width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+.pg{height:4px;background:var(--p2);border-radius:3px;margin-top:8px;overflow:hidden}.pg i{display:block;height:100%;background:var(--done)}
+.empty{text-align:center;color:var(--dim);font-size:12px;padding:16px}
+@media(min-width:900px){#board{overflow:visible}.col{flex:1;max-width:none;max-height:calc(100dvh - 230px)}}
+.ov{position:fixed;inset:0;background:rgba(3,7,20,.65);display:flex;align-items:center;justify-content:center;padding:12px;z-index:50}
+.sheet{background:var(--panel);border-radius:16px;width:100%;max-width:600px;max-height:94dvh;overflow-y:auto;padding:18px}
+.sheet h2{margin:0 0 12px;font-size:17px}
+.f{margin-bottom:12px}.f label{display:block;font-size:12px;font-weight:600;color:var(--dim);margin-bottom:5px}
+.f input,.f select,.f textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:var(--panel);color:var(--ink)}
+.sr{display:grid;grid-template-columns:90px 1fr 118px 90px;gap:6px;align-items:center;margin-bottom:6px;font-size:12.5px;font-weight:600;padding:6px;border-radius:9px;background:var(--p2)}
+.sr.cur{background:#dde8fb;outline:2px solid var(--brand)}
+.sr input,.sr select{padding:7px;border:1px solid var(--line);border-radius:7px;width:100%;min-width:0;background:#fff}
+@media(max-width:560px){.sr{grid-template-columns:1fr 1fr}.sr b{grid-column:1/-1}}
+.ck{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13.5px}.ck input{width:auto}.ck span{flex:1}.ck .x{border:none;background:none;color:var(--notdone);cursor:pointer}
+.log{font-size:11.5px;color:var(--dim);max-height:90px;overflow:auto;border-top:1px solid var(--line);margin-top:8px;padding-top:6px}
+.btns{display:flex;gap:8px;margin-top:14px}
+.b{flex:1;border:none;border-radius:11px;padding:12px;font-weight:600;cursor:pointer}
+.b.p{background:linear-gradient(145deg,#2f7ded,var(--brand));color:#fff}.b.g{background:var(--p2);color:var(--ink)}.b.d{background:#fdeceb;color:#b3261e;flex:none;padding:12px 16px}
+.pr{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.pr span{flex:1}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--deep);color:#fff;padding:10px 18px;border-radius:24px;font-size:13px;z-index:99}
+</style></head><body>
+<header>
+<div class="row"><h1>SLB Project Board<small>Task flow · To-Do → In-Progress → Done / Not-Done</small></h1>
+<button class="hb" id="bPeople">👥 Team</button><button class="hb" id="bData">⚙ Data</button><button class="hb" id="bAdd">＋ New Task</button></div>
+<div class="stats" id="stats"></div><div class="bar"><i id="pbar"></i></div>
+</header>
+<div class="tools"><input id="q" placeholder="🔍 Search tasks…"><select id="fp"></select><select id="fr"><option value="">All priorities</option><option value="hi">High</option><option value="md">Medium</option><option value="lo">Low</option></select></div>
+<div id="board"></div>
+<script>
+const COLS=[['todo','To-Do','#5b6a8c'],['prog','In-Progress','#c98a10'],['done','Done','#1fa34d'],['notdone','Not-Done','#e0453f']];
+const PR={hi:['High','#e0453f'],md:['Medium','#c98a10'],lo:['Low','#1fa34d']};
+const KEY='slbProjectBoard_v1';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>'x'+Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);
+const p2=n=>n<10?'0'+n:''+n;
+const dStr=d=>d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
+const today=()=>dStr(new Date());
+const nowT=()=>{const d=new Date();return p2(d.getHours())+':'+p2(d.getMinutes())};
+const addD=n=>{const d=new Date();d.setDate(d.getDate()+n);return dStr(d)};
+const fmt=(d,t)=>d?new Date(d+'T00:00').toLocaleDateString(undefined,{day:'numeric',month:'short'})+(t?', '+t:''):'';
+let DB,tmp=[];
+function seed(){
+ const P=[{id:'p1',name:'Ahmed Salih',role:'Security Supervisor'},{id:'p2',name:'Maria Okafor',role:'HSE Officer'},{id:'p3',name:'John Bello',role:'Site Coordinator'}];
+ const S=(p,d,t)=>({p:p||'',d:d||'',t:t||''});
+ const mk=(title,desc,prio,col,st,ck)=>({id:uid(),title,desc,prio,col,stages:Object.assign({todo:S(),prog:S(),done:S(),notdone:S()},st),checklist:ck||[],log:[{ts:new Date().toISOString(),txt:'Sample task created'}]});
+ return {people:P,cards:[
+  mk('Inspect main gate CCTV coverage','Check all cameras and record blind spots.','hi','todo',{todo:S('p1',addD(1),'09:00')},[{t:'Check camera angles',d:0},{t:'Review recordings',d:0}]),
+  mk('Update visitor access procedure','Revise SOP and brief guards.','md','prog',{todo:S('p2',addD(-1),'10:00'),prog:S('p2',today(),'08:30')},[{t:'Draft SOP',d:1},{t:'Brief guards',d:0}]),
+  mk('Monthly fire drill','Coordinate evacuation drill with HSE.','hi','done',{todo:S('p3',addD(-5),'09:00'),prog:S('p3',addD(-4),'09:00'),done:S('p3',addD(-3),'11:15')},[{t:'Notify staff',d:1},{t:'Run drill',d:1}]),
+  mk('Replace perimeter lighting','Waiting for vendor delivery.','lo','notdone',{todo:S('p1',addD(-7),'09:00'),notdone:S('p1',addD(-2),'14:00')}),
+  mk('Guard roster for next week','','md','todo',{todo:S('p2',addD(-1),'16:00')})
+ ]};
+}
+function load(){try{DB=JSON.parse(localStorage.getItem(KEY))}catch(e){}if(!DB||!DB.cards)DB=seed()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(DB))}catch(e){}}
+const person=id=>DB.people.find(p=>p.id===id);
+const ini=n=>(n||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+function due(c){const s=c.stages.todo;return s.d?new Date(s.d+'T'+(s.t||'23:59')):null}
+function over(c){const d=due(c);return (c.col==='todo'||c.col==='prog')&&d&&d<new Date()}
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2400)}
+
+function filtered(){
+ const q=$('#q').value.toLowerCase(),fp=$('#fp').value,fr=$('#fr').value;
+ return DB.cards.filter(c=>{
+  if(fr&&c.prio!==fr)return false;
+  if(fp&&!Object.values(c.stages).some(s=>s.p===fp))return false;
+  if(q&&!(c.title+' '+c.desc).toLowerCase().includes(q))return false;
+  return true;});
+}
+function render(){
+ const fpv=$('#fp').value;
+ $('#fp').innerHTML='<option value="">All people</option>'+DB.people.map(p=>`<option value="${p.id}" ${p.id===fpv?'selected':''}>${esc(p.name)}</option>`).join('');
+ const list=filtered(),all=DB.cards,n=all.length;
+ const dn=all.filter(c=>c.col==='done').length,od=all.filter(over).length;
+ $('#stats').innerHTML=[[n,'Total'],[all.filter(c=>c.col==='prog').length,'In Progress'],[dn,'Done'],[od,'Overdue']].map(a=>`<div class="st"><b>${a[0]}</b><span>${a[1]}</span></div>`).join('');
+ $('#pbar').style.width=(n?dn/n*100:0)+'%';
+ $('#board').innerHTML=COLS.map(([k,l,c])=>{
+  const cs=list.filter(x=>x.col===k);
+  return `<div class="col" data-col="${k}" style="--c:${c}"><div class="ch">${l}<span class="n">${cs.length}</span><button data-add="${k}" title="Add">+</button></div>
+  <div class="cards">${cs.map(card).join('')||'<div class="empty">Drop tasks here</div>'}</div></div>`}).join('');
+}
+function card(c){
+ const s=c.stages[c.col],p=person(s.p),dd=due(c),ck=c.checklist,dn=ck.filter(x=>x.d).length;
+ return `<div class="card ${over(c)?'od':''}" draggable="true" data-id="${c.id}" style="--pc:${PR[c.prio][1]}">
+ <div class="tags"><span class="tag ${c.prio}">${PR[c.prio][0]}</span>${over(c)?'<span class="tag red">OVERDUE</span>':''}${dd&&c.col!=='todo'?`<span class="tag">Planned ${fmt(c.stages.todo.d,c.stages.todo.t)}</span>`:''}</div>
+ <h4>${esc(c.title)}</h4>
+ <div class="meta">${p?`<div class="av" title="${esc(p.name)}">${ini(p.name)}</div><span>${esc(p.name.split(' ')[0])}</span>`:'<span>Unassigned</span>'}<span style="margin-left:auto">${s.d?'📅 '+fmt(s.d,s.t):''}</span></div>
+ ${ck.length?`<div class="pg"><i style="width:${dn/ck.length*100}%"></i></div><div class="meta" style="margin-top:3px">☑ ${dn}/${ck.length}</div>`:''}</div>`;
+}
+
+/* drag & drop */
+let dragId=null;
+const B=$('#board');
+B.addEventListener('dragstart',e=>{const c=e.target.closest('.card');if(c){dragId=c.dataset.id;e.dataTransfer.setData('text','x')}});
+B.addEventListener('dragover',e=>{const c=e.target.closest('.col');if(c){e.preventDefault();document.querySelectorAll('.col').forEach(x=>x.classList.toggle('over',x===c))}});
+B.addEventListener('dragleave',e=>{if(!e.relatedTarget||!e.relatedTarget.closest('.col'))document.querySelectorAll('.col').forEach(x=>x.classList.remove('over'))});
+B.addEventListener('drop',e=>{e.preventDefault();document.querySelectorAll('.col').forEach(x=>x.classList.remove('over'));const c=e.target.closest('.col');
+ if(c&&dragId){const k=DB.cards.find(x=>x.id===dragId);if(k&&k.col!==c.dataset.col)openCard(dragId,c.dataset.col);}dragId=null});
+B.addEventListener('click',e=>{
+ const a=e.target.closest('[data-add]');if(a){openCard(null,a.dataset.add);return}
+ const c=e.target.closest('.card');if(c)openCard(c.dataset.id);
+});
+
+/* card modal */
+function pOpts(sel){return '<option value="">— Unassigned —</option>'+DB.people.map(p=>`<option value="${p.id}" ${p.id===sel?'selected':''}>${esc(p.name)}</option>`).join('')}
+function modal(html){const o=document.createElement('div');o.className='ov';o.innerHTML='<div class="sheet">'+html+'</div>';o.addEventListener('mousedown',e=>{if(e.target===o)o.remove()});document.body.appendChild(o);return o}
+function openCard(id,newCol){
+ const c=id?DB.cards.find(x=>x.id===id):null;
+ const col=newCol||(c?c.col:'todo');
+ tmp=c?c.checklist.map(x=>({...x})):[];
+ const st=c?c.stages:{todo:{},prog:{},done:{},notdone:{}};
+ const o=modal(`<h2>${c?'Edit Task':'New Task'}</h2>
+ <div class="f"><label>Title</label><input id="mT" value="${esc(c?c.title:'')}" placeholder="What needs to be done?"></div>
+ <div class="f"><label>Description / notes</label><textarea id="mD" rows="2">${esc(c?c.desc:'')}</textarea></div>
+ <div class="row"><div class="f" style="flex:1"><label>Priority</label><select id="mP">${Object.entries(PR).map(([k,v])=>`<option value="${k}" ${(c?c.prio:'md')===k?'selected':''}>${v[0]}</option>`).join('')}</select></div>
+ <div class="f" style="flex:1"><label>Current stage</label><select id="mC">${COLS.map(x=>`<option value="${x[0]}" ${x[0]===col?'selected':''}>${x[1]}</option>`).join('')}</select></div></div>
+ <div class="f"><label>Responsible person, date &amp; time per stage</label>${COLS.map(([k,l])=>`<div class="sr" data-k="${k}"><b>${l}</b><select class="sp">${pOpts(st[k].p)}</select><input type="date" class="sd" value="${st[k].d||''}"><input type="time" class="stt" value="${st[k].t||''}"></div>`).join('')}</div>
+ <div class="f"><label>Checklist</label><div id="ckl"></div><div class="row"><input id="ckn" placeholder="Add subtask…" style="flex:1;border:1px solid var(--line);border-radius:9px;padding:8px"><button class="b g" id="ckb" style="flex:none;padding:8px 14px">Add</button></div></div>
+ ${c?`<div class="log">${c.log.slice().reverse().map(l=>`• ${new Date(l.ts).toLocaleString()} — ${esc(l.txt)}`).join('<br>')}</div>`:''}
+ <div class="btns">${c?'<button class="b d" id="mDel">Delete</button>':''}<button class="b g" id="mX">Cancel</button><button class="b p" id="mS">Save</button></div>`);
+ const hl=()=>{o.querySelectorAll('.sr').forEach(r=>r.classList.toggle('cur',r.dataset.k===o.querySelector('#mC').value))};
+ const autofill=()=>{const k=o.querySelector('#mC').value,r=o.querySelector(`.sr[data-k="${k}"]`);
+  if(!r.querySelector('.sd').value&&k!=='todo'||(!r.querySelector('.sd').value&&!c)){r.querySelector('.sd').value=today();r.querySelector('.stt').value=nowT()}
+  if(!r.querySelector('.sp').value){const prev=[...o.querySelectorAll('.sp')].map(s=>s.value).filter(Boolean).pop();if(prev)r.querySelector('.sp').value=prev}
+  hl()};
+ const ckr=()=>{o.querySelector('#ckl').innerHTML=tmp.map((x,i)=>`<div class="ck"><input type="checkbox" data-i="${i}" ${x.d?'checked':''}><span style="${x.d?'text-decoration:line-through;color:var(--dim)':''}">${esc(x.t)}</span><button class="x" data-r="${i}">✕</button></div>`).join('')};
+ ckr();hl();if(newCol)autofill();
+ o.querySelector('#mC').onchange=autofill;
+ o.querySelector('#ckl').onclick=e=>{const i=e.target.dataset;if(i.i!==undefined)tmp[i.i].d=e.target.checked?1:0;if(i.r!==undefined)tmp.splice(i.r,1);ckr()};
+ const addCk=()=>{const v=o.querySelector('#ckn').value.trim();if(v){tmp.push({t:v,d:0});o.querySelector('#ckn').value='';ckr()}};
+ o.querySelector('#ckb').onclick=addCk;o.querySelector('#ckn').onkeydown=e=>{if(e.key==='Enter')addCk()};
+ o.querySelector('#mX').onclick=()=>o.remove();
+ if(c)o.querySelector('#mDel').onclick=()=>{if(confirm('Delete this task?')){DB.cards=DB.cards.filter(x=>x!==c);save();o.remove();render()}};
+ o.querySelector('#mS').onclick=()=>{
+  const title=o.querySelector('#mT').value.trim();if(!title){toast('Please enter a title');return}
+  const stages={};o.querySelectorAll('.sr').forEach(r=>stages[r.dataset.k]={p:r.querySelector('.sp').value,d:r.querySelector('.sd').value,t:r.querySelector('.stt').value});
+  const nc=o.querySelector('#mC').value,cur=stages[nc];
+  const sn=COLS.find(x=>x[0]===nc)[1],who=person(cur.p);
+  const k=c||{id:uid(),log:[]};
+  const moved=!c||k.col!==nc;
+  Object.assign(k,{title,desc:o.querySelector('#mD').value,prio:o.querySelector('#mP').value,col:nc,stages,checklist:tmp});
+  if(moved)k.log.push({ts:new Date().toISOString(),txt:(c?'Moved to ':'Created in ')+sn+(who?' · '+who.name:'')+(cur.d?' · '+fmt(cur.d,cur.t):'')});
+  if(!c)DB.cards.push(k);
+  save();o.remove();render();toast('Saved');
+ };
+ setTimeout(()=>o.querySelector('#mT').focus(),50);
+}
+
+/* team */
+function openTeam(){
+ const draw=()=>{o.querySelector('#pl').innerHTML=DB.people.map(p=>`<div class="pr"><div class="av">${ini(p.name)}</div><span><b>${esc(p.name)}</b><br><small style="color:var(--dim)">${esc(p.role||'')}</small></span><button class="b d" data-d="${p.id}" style="padding:6px 10px">✕</button></div>`).join('')||'<div class="empty">No team members</div>'};
+ const o=modal(`<h2>Team Members</h2><div id="pl"></div>
+ <div class="f" style="margin-top:12px"><input id="pn" placeholder="Full name"></div><div class="f"><input id="pr" placeholder="Role (optional)"></div>
+ <div class="btns"><button class="b g" id="pc">Close</button><button class="b p" id="pa">Add person</button></div>`);
+ draw();
+ o.querySelector('#pc').onclick=()=>{o.remove();render()};
+ o.querySelector('#pa').onclick=()=>{const n=o.querySelector('#pn').value.trim();if(!n)return;DB.people.push({id:uid(),name:n,role:o.querySelector('#pr').value.trim()});o.querySelector('#pn').value=o.querySelector('#pr').value='';save();draw()};
+ o.querySelector('#pl').onclick=e=>{const id=e.target.dataset.d;if(id&&confirm('Remove this person? Their tasks become unassigned.')){DB.people=DB.people.filter(p=>p.id!==id);DB.cards.forEach(c=>Object.values(c.stages).forEach(s=>{if(s.p===id)s.p=''}));save();draw()}};
+}
+
+/* data */
+function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove()}
+function openData(){
+ const o=modal(`<h2>Data &amp; Reports</h2>
+ <div class="btns" style="flex-direction:column">
+ <button class="b g" id="dc">📄 Export report (CSV for Excel)</button>
+ <button class="b g" id="dj">💾 Backup (JSON)</button>
+ <button class="b g" id="di">📥 Restore backup</button>
+ <button class="b g" id="dp">🖨 Print / Save as PDF</button>
+ <button class="b d" id="de">Reset to sample data</button><button class="b p" id="dx">Close</button></div>
+ <input type="file" id="fi" accept=".json" hidden>
+ <p style="font-size:12px;color:var(--dim)">All data is stored on this device only. Make regular backups.</p>`);
+ o.querySelector('#dx').onclick=()=>o.remove();
+ o.querySelector('#dc').onclick=()=>{
+  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const rows=[['Task','Priority','Current Stage','Overdue','To-Do Person','To-Do Date','To-Do Time','In-Progress Person','IP Date','IP Time','Done Person','Done Date','Done Time','Not-Done Person','ND Date','ND Time','Checklist']];
+  DB.cards.forEach(c=>{const r=[c.title,PR[c.prio][0],COLS.find(x=>x[0]===c.col)[1],over(c)?'Yes':'No'];
+   COLS.forEach(([k])=>{const s=c.stages[k];r.push((person(s.p)||{}).name||'',s.d,s.t)});
+   r.push(c.checklist.filter(x=>x.d).length+'/'+c.checklist.length);rows.push(r)});
+  dl('SLB_Project_Report_'+today()+'.csv','\ufeff'+rows.map(r=>r.map(q).join(',')).join('\r\n'),'text/csv');};
+ o.querySelector('#dj').onclick=()=>dl('SLB_Board_Backup_'+today()+'.json',JSON.stringify(DB,null,2),'application/json');
+ o.querySelector('#di').onclick=()=>o.querySelector('#fi').click();
+ o.querySelector('#fi').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.cards||!d.people)throw 0;DB=d;save();o.remove();render();toast('Restored')}catch(x){toast('Invalid file')}};r.readAsText(f)};
+ o.querySelector('#dp').onclick=()=>{o.remove();window.print()};
+ o.querySelector('#de').onclick=()=>{if(confirm('Replace everything with sample data?')){DB=seed();save();o.remove();render()}};
+}
+
+$('#bAdd').onclick=()=>openCard(null,'todo');
+$('#bPeople').onclick=openTeam;$('#bData').onclick=openData;
+['#q','#fp','#fr'].forEach(s=>$(s).addEventListener('input',render));
+load();render();
+setTimeout(()=>{const n=DB.cards.filter(over).length;if(n)toast('⚠ '+n+' task'+(n>1?'s':'')+' overdue')},600);
+setInterval(render,60000);
+</script></body></html>
